@@ -1,87 +1,94 @@
 const express = require('express');
-const fs = require('fs').promises;
-const axios = require('axios');
-const app = express();
-const port = 3001;
+const fs = require('fs');
+const path = require('path');
 
-// Middleware to parse JSON bodies
+const app = express();
 app.use(express.json());
 
-// Load Placeholder.json
-async function loadPlaceholderData() {
-    try {
-        const data = await fs.readFile('Placeholder.json', 'utf8');
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('Error loading Placeholder.json:', error);
-        return {};
-    }
+const PLACEHOLDER_FILE = path.join(__dirname, 'Placeholder.json');
+
+
+function loadPlaceholders() {
+  try {
+    const rawData = fs.readFileSync(PLACEHOLDER_FILE);
+    return JSON.parse(rawData);
+  } catch (err) {
+    console.error('Error reading Placeholder.json:', err.message);
+    return {};
+  }
 }
 
-// Helper to find matching endpoint in Placeholder.json
-function findEndpointConfig(apiData, requestedUrl, method) {
-    for (const module in apiData) {
-        for (const endpoint in apiData[module]) {
-            const config = apiData[module][endpoint];
-            if (config.method.toUpperCase() === method.toUpperCase()) {
-                // Convert URL pattern to regex to match parameters (e.g., :empId)
-                const urlPattern = config.url.replace(/:[^/]+/g, '([^/]+)');
-                const regex = new RegExp(`^${urlPattern}$`);
-                const match = requestedUrl.match(regex);
-                if (match) {
-                    return { config, params: match.slice(1) };
-                }
-            }
-        }
-    }
-    return null;
+
+function fillParams(url, params) {
+  return url.replace(/:([a-zA-Z_]+)/g, (_, key) => params[key] || '');
 }
 
-// Helper to replace parameters in URL
-function replaceUrlParams(url, params) {
-    let paramIndex = 0;
-    return url.replace(/:[^/]+/g, () => params[paramIndex++] || '');
-}
 
-// Main request handler
-app.all('/api/:path(*)', async (req, res) => {
-    const apiData = await loadPlaceholderData();
-    const requestedUrl = `/api/${req.params.path}`;
-    const method = req.method;
+function registerRoute(customPath, method, targetUrl, response) {
+  const expressMethod = method.toLowerCase();
 
-    const endpointConfig = findEndpointConfig(apiData, requestedUrl, method);
-    if (!endpointConfig) {
-        return res.status(404).json({ error: 'Endpoint not found in Placeholder.json' });
+  if (typeof app[expressMethod] !== 'function') {
+    console.warn(`Unsupported method: ${method}`);
+    return;
+  }
+
+  app[expressMethod](customPath, async (req, res) => {
+    if (response) {
+      console.log(` Mocked: ${method} ${customPath}`);
+      return res.json(response);
     }
 
-    const { config, params } = endpointConfig;
-    const targetUrl = replaceUrlParams(config.url, params);
+    // Forward to real API
+    const realUrl = fillParams(targetUrl, req.params);
 
     try {
-        // Forward request to the real backend URL
-        const response = await axios({
-            method: method,
-            url: targetUrl,
-            data: ['POST', 'PATCH'].includes(method.toUpperCase()) ? req.body : undefined,
-            params: method.toUpperCase() === 'GET' ? req.query : undefined,
-            headers: {
-                'Content-Type': 'application/json',
-                ...req.headers,
-                host: undefined, // Remove host header to avoid issues
-            },
-        });
+      const fetch = (await import('node-fetch')).default;
 
-        res.status(response.status).json(response.data);
-    } catch (error) {
-        console.error(`Error forwarding request to ${targetUrl}:`, error.message);
-        res.status(error.response?.status || 500).json({
-            error: 'Failed to forward request',
-            details: error.message,
-        });
+      const fetchOptions = {
+        method,
+        headers: { 'Content-Type': 'application/json' }
+      };
+
+      if (method !== 'GET' && method !== 'DELETE') {
+        fetchOptions.body = JSON.stringify(req.body);
+      }
+
+      const proxyRes = await fetch(realUrl, fetchOptions);
+      const data = await proxyRes.json();
+
+      res.status(proxyRes.status).json(data);
+    } catch (err) {
+      console.error(' Proxy error:', err.message);
+      res.status(500).json({ error: 'Proxying failed' });
     }
-});
+  });
 
-// Start server
-app.listen(port, () => {
-    console.log(`Placeholder server running on http://localhost:${port}`);
+  console.log(`Done [${method}] ${customPath} → ${targetUrl}`);
+}
+
+// Load all routes from placeholder config
+function loadRoutes() {
+  const data = loadPlaceholders();
+
+  for (const category in data) {
+    const actions = data[category];
+    for (const action in actions) {
+      const entry = actions[action];
+      const method = entry.method || 'GET';
+      const targetUrl = entry.url;
+      const response = entry.response || null;
+
+      const dynamicSegments = (targetUrl.match(/:([a-zA-Z_]+)/g) || []).join('/');
+      const frontendPath = `/${category}/${action}${dynamicSegments ? '/' + dynamicSegments : ''}`.replace(/\/$/, '');
+
+      registerRoute(frontendPath, method, targetUrl, response);
+    }
+  }
+}
+
+loadRoutes();
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`\n Placeholder server listening at http://localhost:${PORT}`);
 });
