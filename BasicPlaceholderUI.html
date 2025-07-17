@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Management Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-semibold text-gray-800 mb-6">API Management Dashboard</h1>
+        <div id="modules" class="space-y-4"></div>
+
+        <h2 class="text-xl font-medium text-gray-700 mt-8 mb-4">Create New Endpoint</h2>
+        <div id="createForm" class="bg-gray-50 p-4 rounded-md shadow-sm">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label class="flex flex-col">
+                    <span class="text-sm text-gray-600">Module</span>
+                    <input type="text" id="newModule" class="mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </label>
+                <label class="flex flex-col">
+                    <span class="text-sm text-gray-600">Endpoint Name</span>
+                    <input type="text" id="newEndpoint" class="mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </label>
+                <label class="flex flex-col">
+                    <span class="text-sm text-gray-600">URL</span>
+                    <input type="text" id="newUrl" class="mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </label>
+                <label class="flex flex-col">
+                    <span class="text-sm text-gray-600">Method</span>
+                    <select id="newMethod" class="mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PATCH">PATCH</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                </label>
+            </div>
+            <button onclick="createEndpoint()" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Create</button>
+        </div>
+
+        <h2 class="text-xl font-medium text-gray-700 mt-8 mb-4">Edit Endpoint</h2>
+        <div id="editForm" class="bg-gray-50 p-4 rounded-md shadow-sm hidden">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <label class="flex flex-col">
+                    <span class="text-sm text-gray-600">Module</span>
+                    <input type="text" id="editModule" readonly class="mt-1 p-2 border rounded-md bg-gray-200">
+                </label>
+                <label class="flex flex-col">
+                    <span class="text-sm text-gray-600">Endpoint Name</span>
+                    <input type="text" id="editEndpoint" readonly class="mt-1 p-2 border rounded-md bg-gray-200">
+                </label>
+                <label class="flex flex-col">
+                    <span class="text-sm text-gray-600">URL</span>
+                    <input type="text" id="editUrl" class="mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </label>
+                <label class="flex flex-col">
+                    <span class="text-sm text-gray-600">Method</span>
+                    <select id="editMethod" class="mt-1 p-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PATCH">PATCH</option>
+                        <option value="DELETE">DELETE</option>
+                    </select>
+                </label>
+            </div>
+            <div class="mt-4 flex space-x-2">
+                <button onclick="saveEdit()" class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Save</button>
+                <button onclick="cancelEdit()" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-400">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let apiData = {};
+        let currentEdit = null;
+
+        // Load JSON data
+        fetch('Placeholder.json')
+            .then(response => response.json())
+            .then(data => {
+                apiData = data;
+                displayModules();
+            })
+            .catch(error => {
+                console.error('Error loading JSON:', error);
+                alert('Failed to load API data. Please check if Placeholder.json exists.');
+            });
+
+        function displayModules() {
+            const modulesDiv = document.getElementById('modules');
+            modulesDiv.innerHTML = '';
+            for (const module in apiData) {
+                const moduleDiv = document.createElement('div');
+                moduleDiv.className = 'bg-white p-4 rounded-md shadow-sm';
+                moduleDiv.innerHTML = `<h3 class="text-lg font-medium text-gray-800 mb-2">${module}</h3>`;
+                for (const endpoint in apiData[module]) {
+                    const endpointDiv = document.createElement('div');
+                    endpointDiv.className = 'flex items-center py-2 border-b border-gray-200 last:border-b-0';
+                    endpointDiv.innerHTML = `
+                        <span class="w-20 font-medium text-gray-600">${apiData[module][endpoint].method}</span>
+                        <span class="flex-grow text-gray-700">${endpoint}: ${apiData[module][endpoint].url}</span>
+                        <div class="flex space-x-2">
+                            <button onclick="editEndpoint('${module}', '${endpoint}')" class="text-blue-500 hover:text-blue-700">Edit</button>
+                            <button onclick="deleteEndpoint('${module}', '${endpoint}')" class="text-red-500 hover:text-red-700">Delete</button>
+                        </div>
+                    `;
+                    moduleDiv.appendChild(endpointDiv);
+                }
+                modulesDiv.appendChild(moduleDiv);
+            }
+        }
+
+        function createEndpoint() {
+            const module = document.getElementById('newModule').value.trim();
+            const endpoint = document.getElementById('newEndpoint').value.trim();
+            const url = document.getElementById('newUrl').value.trim();
+            const method = document.getElementById('newMethod').value;
+
+            if (module && endpoint && url && method) {
+                if (!apiData[module]) {
+                    apiData[module] = {};
+                }
+                apiData[module][endpoint] = { url, method };
+                saveJson();
+                displayModules();
+                document.getElementById('newModule').value = '';
+                document.getElementById('newEndpoint').value = '';
+                document.getElementById('newUrl').value = '';
+                document.getElementById('newMethod').value = 'GET';
+            } else {
+                alert('Please fill all fields');
+            }
+        }
+
+        function editEndpoint(module, endpoint) {
+            currentEdit = { module, endpoint };
+            document.getElementById('editModule').value = module;
+            document.getElementById('editEndpoint').value = endpoint;
+            document.getElementById('editUrl').value = apiData[module][endpoint].url;
+            document.getElementById('editMethod').value = apiData[module][endpoint].method;
+            document.getElementById('editForm').classList.remove('hidden');
+        }
+
+        function saveEdit() {
+            if (!currentEdit) return;
+            const { module, endpoint } = currentEdit;
+            const url = document.getElementById('editUrl').value.trim();
+            const method = document.getElementById('editMethod').value;
+
+            if (url && method) {
+                apiData[module][endpoint] = { url, method };
+                saveJson();
+                displayModules();
+                cancelEdit();
+            } else {
+                alert('Please fill all fields');
+            }
+        }
+
+        function cancelEdit() {
+            currentEdit = null;
+            document.getElementById('editForm').classList.add('hidden');
+            document.getElementById('editModule').value = '';
+            document.getElementById('editEndpoint').value = '';
+            document.getElementById('editUrl').value = '';
+            document.getElementById('editMethod').value = 'GET';
+        }
+
+        function deleteEndpoint(module, endpoint) {
+            if (confirm(`Delete ${endpoint} in ${module}?`)) {
+                delete apiData[module][endpoint];
+                if (Object.keys(apiData[module]).length === 0) {
+                    delete apiData[module];
+                }
+                saveJson();
+                displayModules();
+            }
+        }
+
+        function saveJson() {
+            console.log('Updated JSON:', JSON.stringify(apiData, null, 2));
+            alert('Changes logged to console. Use a server-side API to save to Placeholder.json.');
+            // For actual file writing, implement a server-side endpoint, e.g.:
+            /*
+            fetch('saveJson', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(apiData)
+            })
+            .then(response => response.json())
+            .then(data => console.log('Saved:', data))
+            .catch(error => console.error('Error saving JSON:', error));
+            */
+        }
+    </script>
+</body>
+</html>

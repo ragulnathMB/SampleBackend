@@ -1,0 +1,144 @@
+{
+  "ProfileManagement": {
+    "getEmployeeByID": {
+      "url": "http://localhost:3000/api/profile/:empId",
+      "method": "GET"
+    },
+    "updateProfile": {
+      "url": "http://localhost:3000/api/profile/:empId",
+      "method": "PATCH"
+    }
+  },
+  "LeaveManagement": {
+    "applyForLeave": {
+      "url": "http://localhost:3000/api/leave/apply",
+      "method": "POST"
+    },
+    "viewLeaveBalance": {
+      "url": "http://localhost:3000/api/leave/balance/:empId",
+      "method": "GET"
+    },
+    "viewLeaveHistory": {
+      "url": "http://localhost:3000/api/leave/history/:empId",
+      "method": "GET"
+    },
+    "getLeaveTypes": {
+      "url": "http://localhost:3000/api/leave/types",
+      "method": "GET"
+    }
+  },
+  "AttendanceManagement": {
+    "checkIn": {
+      "url": "http://localhost:3000/api/attendance/checkin",
+      "method": "POST"
+    },
+    "checkOut": {
+      "url": "http://localhost:3000/api/attendance/checkout",
+      "method": "POST"
+    },
+    "viewAttendanceHistory": {
+      "url": "http://localhost:3000/api/attendance/history/:empId",
+      "method": "GET"
+    }
+  },
+  "PayrollManagement": {
+    "generatePayslip": {
+      "url": "http://localhost:3000/api/payroll/generate/:empId",
+      "method": "POST"
+    },
+    "viewPayslips": {
+      "url": "http://localhost:3000/api/payroll/payslips/:empId",
+      "method": "GET"
+    }
+  },
+  "DocumentManagement": {
+    "requestDocument": {
+      "url": "http://localhost:3000/api/documents/request",
+      "method": "POST"
+    },
+    "viewDocuments": {
+      "url": "http://localhost:3000/api/documents/:empId",
+      "method": "GET"
+    }
+  },
+  "ReimbursementManagement": {
+    "submitReimbursement": {
+      "url": "http://localhost:3000/api/reimbursement/submit",
+      "method": "POST"
+    },
+    "viewReimbursementHistory": {
+      "url": "http://localhost:3000/api/reimbursement/history/:empId",
+      "method": "GET"
+    }
+  },
+  "NotificationManagement": {
+    "createNotification": {
+      "url": "http://localhost:3000/api/notifications/create",
+      "method": "POST"
+    },
+    "fetchNotifications": {
+      "url": "http://localhost:3000/api/notifications/:empId",
+      "method": "GET"
+    },
+    "markNotificationAsRead": {
+      "url": "http://localhost:3000/api/notifications/:notificationId/read",
+      "method": "PATCH"
+    }
+  },
+  "TeamManagement": {
+    "getTeamMembers": {
+      "url": "http://localhost:3000/api/team/members/:managerId",
+      "method": "GET"
+    },
+    "viewTeamMemberDetails": {
+      "url": "http://localhost:3000/api/team/member/:managerId/:empId",
+      "method": "GET"
+    }
+  },
+  "ApprovalManagement": {
+    "fetchPendingApprovals": {
+      "url": "http://localhost:3000/api/approvals/pending/:managerId",
+      "method": "GET"
+    },
+    "approveOrRejectLeave": {
+      "url": "http://localhost:3000/api/approvals/leave/:leaveReqId",
+      "method": "PATCH"
+    },
+    "bulkApproveOrRejectLeaves": {
+      "url": "http://localhost:3000/api/approvals/leave/bulk",
+      "method": "PATCH"
+    }
+  },
+  "PerformanceFeedback": {
+    "submitFeedback": {
+      "url": "http://localhost:3000/api/feedback/submit",
+      "method": "POST"
+    },
+    "viewFeedbackHistory": {
+      "url": "http://localhost:3000/api/feedback/history/:empId",
+      "method": "GET"
+    }
+  },
+  "Dashboard": {
+    "employeeSummary": {
+      "url": "http://localhost:3000/api/dashboard/summary/:empId",
+      "method": "GET"
+    },
+    "managerSummary": {
+      "url": "http://localhost:3000/api/manager/dashboard/:managerId",
+      "method": "GET"
+    }
+  },
+  "EmployeeSearch": {
+    "searchEmployees": {
+      "url": "http://localhost:3000/api/employees/search/:managerId",
+      "method": "GET"
+    }
+  },
+  "AttendanceSummary": {
+    "teamAttendanceSummary": {
+      "url": "http://localhost:3000/api/team/attendance-summary/:managerId",
+      "method": "GET"
+    }
+  }
+}
